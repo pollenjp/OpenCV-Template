@@ -55,6 +55,7 @@ def main():
                                  pickout_offset=[-30,-30])
     im = im.astype(dtype=np.uint8)
     cv2.imshow("Photo List", im)
+    cv2.moveWindow('Photo List', 20, 20)
 
     while True:
         # is there a waitkey table? - OpenCV Q&A Forum
@@ -87,6 +88,7 @@ def main():
                                      pickout_offset=[-30,-30])
         im = im.astype(dtype=np.uint8)
         cv2.imshow("Photo List", im)
+        cv2.moveWindow('Photo List', 20, 20)
 
     cv2.destroyAllWindows()
     return
