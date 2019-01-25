@@ -2,8 +2,15 @@
 import list_photos
 
 
-def main():
-    import os
+def main(img_path,
+         canvas_w=1200,
+         canvas_h=800,
+         margin_size=[50, 50],
+         canvas_image_ratio=3,
+         pickout_offset=[-30,-30]):
+    """
+    | img_path | str | image directory path
+    """
     import sys
     import pathlib
     import re
@@ -18,20 +25,12 @@ def main():
     print("cv2        : {}".format(cv2.__version__))
 
     #===================================
-    HOME_Path = pathlib.Path(os.getcwd()).parents[1]
-    img_Path  = HOME_Path / "img"
-    print("path name | exist | path\n" + 
-          "========================")
-    print("HOME_Path | {:5} | {}".format(HOME_Path.exists(), str(HOME_Path)))
-    print("img_Path  | {:5} | {}".format(img_Path.exists(),  str(img_Path)))
-
-    #===================================
     # filename list
     all_files = [
         os.path.join(os.path.abspath(_dirpath), _filename)
-        for _dirpath, _dirnames, _filenames in os.walk(str(img_Path))
+        for _dirpath, _dirnames, _filenames in os.walk(str(img_path))
         for _filename in _filenames
-        if re.search(r'.*\.(png|bmp|jpg)', _filename) is not None
+        if re.search(r'.*\.(png|bmp|jpg|tif)', _filename) is not None
     ]
 
     pprint.pprint(all_files)
@@ -47,12 +46,12 @@ def main():
     #===================================
     pickout_index = 0
     im = list_photos.list_photos(images_list=images_list,
-                                 canvas_w=1200,
-                                 canvas_h=800,
-                                 margin_size=50,
-                                 canvas_image_ratio=3,
+                                 canvas_w=canvas_w,
+                                 canvas_h=canvas_h,
+                                 margin_size=margin_size,
+                                 canvas_image_ratio=canvas_image_ratio,
                                  pickout_index=pickout_index,
-                                 pickout_offset=[-30,-30])
+                                 pickout_offset=pickout_offset)
     im = im.astype(dtype=np.uint8)
     cv2.imshow("Photo List", im)
     cv2.moveWindow('Photo List', 20, 20)
@@ -80,12 +79,12 @@ def main():
         # cv2.imshow
         # https://docs.opencv.org/3.0-beta/modules/highgui/doc/user_interface.html?highlight=cv2.imshow#cv2.imshow
         im = list_photos.list_photos(images_list=images_list,
-                                     canvas_w=1200,
-                                     canvas_h=800,
-                                     margin_size=50,
-                                     canvas_image_ratio=3,
+                                     canvas_w=canvas_w,
+                                     canvas_h=canvas_h,
+                                     margin_size=margin_size,
+                                     canvas_image_ratio=canvas_image_ratio,
                                      pickout_index=pickout_index,
-                                     pickout_offset=[-30,-30])
+                                     pickout_offset=pickout_offset)
         im = im.astype(dtype=np.uint8)
         cv2.imshow("Photo List", im)
         cv2.moveWindow('Photo List', 20, 20)
@@ -95,4 +94,24 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import os
+    import argparse
+    parser = argparse.ArgumentParser()
+    ################################################################################################################################################################################################################################################
+    #parser.add_argument('path_data_csv',      action='store', nargs=None, const=None, default=None, type=str, choices=None, required=True,  help='Directory path where your taken photo files are located.')
+    parser.add_argument('--img_path',          action='store', nargs=None, const=None, default=None, type=str, choices=None, required=True,  help='image directory path')
+    parser.add_argument('--margin_size_x',     action='store', nargs='?',  const=5,    default=5,    type=int, choices=None, required=False, help='')
+    parser.add_argument('--margin_size_y',     action='store', nargs='?',  const=10,   default=10,   type=int, choices=None, required=False, help='')
+    parser.add_argument('--canvas_image_ratio',action='store', nargs='?',  const=4,    default=4,    type=int, choices=None, required=False, help='')
+    parser.add_argument('--pickout_offset_x',  action='store', nargs='?',  const=0,    default=0,    type=int, choices=None, required=False, help='')
+    parser.add_argument('--pickout_offset_y',  action='store', nargs='?',  const=-25,  default=-25,  type=int, choices=None, required=False, help='')
+    args = parser.parse_args()
+
+    assert os.path.exists(args.img_path)
+
+    main(img_path=args.img_path,
+         canvas_w=600,
+         canvas_h=400,
+         margin_size=[args.margin_size_x, args.margin_size_x],
+         canvas_image_ratio=args.canvas_image_ratio,
+         pickout_offset=[args.pickout_offset_x, args.pickout_offset_y])

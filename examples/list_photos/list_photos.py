@@ -6,33 +6,33 @@ import cv2
 def list_photos(images_list,
                 canvas_w=1200,
                 canvas_h=800,
-                margin_size=50,
+                margin_size=[50, 25],
                 canvas_image_ratio=3,
                 pickout_index=0,
-                pickout_offset=[0,0]):
+                pickout_offset=[0, 0]):
     """
     | images_list    | list | list of numpy.array image
     |                |      | [ np.array([...]), ..., np.array([...])
     |                |      |   np.array([...]), ..., np.array([...]) ]
+    | margin_size    | int  | canvasの内側の余白
     | pickout_index  | int  | pickout_index枚目の写真を強調するため
     | pickout_offset | list | pickout_index枚目の写真の中心座標をずらすオフセット
     """
+    assert margin_size[0] > pickout_offset[0]
+    assert margin_size[1] > pickout_offset[1]
     #===================================
     # Canvasを用意
     canvas = np.full(shape=(canvas_h, canvas_w, 3), fill_value=255)
 
     #===================================
     # 写真の配置の開始位置を終わり位置を指定
-    start_coordinate = np.array([canvas_h - margin_size, margin_size])  # 左下
-    end_coordinate   = np.array([margin_size, canvas_w - margin_size])  # 右上
-    print(start_coordinate)
-    print(end_coordinate)
+    start_coordinate = np.array([canvas_h - margin_size[1], margin_size[0]])  # 左下
+    end_coordinate   = np.array([margin_size[1], canvas_w - margin_size[0]])  # 右上
 
     #===================================
     # canvas内部の一枚あたりの写真の最大幅(縦横)を指定
     # 縦横比率はcanvasに合わせ,canvasの1/3とする
     image_w, image_h = int(canvas_w / canvas_image_ratio), int(canvas_h / canvas_image_ratio)
-    print(image_w, image_h)
 
     #===================================
     # 写真の枚数
@@ -51,7 +51,7 @@ def list_photos(images_list,
 
     #===================================
     # pickout_index枚目の写真を強調
-    center_coordinates[pickout_index] += np.array(pickout_offset, dtype=np.int)
+    center_coordinates[pickout_index] += np.array(pickout_offset[::-1], dtype=np.int)
 
     #===================================
     # image_w, image_h に収まるようにリサイズする
@@ -73,8 +73,20 @@ def list_photos(images_list,
     #===================================
     for (y,x), re_im in zip(center_coordinates[::-1], resized_images_list[::-1]):
         y_width, x_width, _ = re_im.shape
-        canvas[y-int(y_width/2):y+int(y_width/2), x-int(x_width/2):x+int(x_width/2), :] = re_im
-        print(re_im)
+
+        _y_min = y-int(y_width/2)
+        if y_width % 2 == 0:
+            _y_max = y+int(y_width/2)
+        else:
+            _y_max = y+int(y_width/2) + 1
+
+        _x_min = x-int(x_width/2)
+        if x_width % 2 == 0:
+            _x_max = x+int(x_width/2)
+        else:
+            _x_max = x+int(x_width/2) + 1
+
+        canvas[_y_min:_y_max, _x_min:_x_max, :] = re_im
 
     return canvas
 
@@ -123,7 +135,7 @@ if __name__ == "__main__":
     canvas = list_photos(images_list=images_list,
                          canvas_w=1200,
                          canvas_h=800,
-                         margin_size=50,
+                         margin_size=[50, 50],
                          canvas_image_ratio=3)
     im = canvas.astype(dtype=np.int8)
     print("im.min() : {}".format(im.min()))
@@ -157,4 +169,3 @@ if __name__ == "__main__":
     cv2.imshow("Photo List", im)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
