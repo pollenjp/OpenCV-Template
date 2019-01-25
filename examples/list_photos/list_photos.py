@@ -1,3 +1,4 @@
+""" list photos """
 import copy
 import numpy as np
 import cv2
@@ -6,11 +7,15 @@ def list_photos(images_list,
                 canvas_w=1200,
                 canvas_h=800,
                 margin_size=50,
-                canvas_image_ratio=3):
+                canvas_image_ratio=3,
+                pickout_index=0,
+                pickout_offset=[0,0]):
     """
-    | images_list | list of numpy.array image
-    |             | [ np.array([...]), ..., np.array([...])
-    |             |   np.array([...]), ..., np.array([...]) ]
+    | images_list    | list | list of numpy.array image
+    |                |      | [ np.array([...]), ..., np.array([...])
+    |                |      |   np.array([...]), ..., np.array([...]) ]
+    | pickout_index  | int  | pickout_index枚目の写真を強調するため
+    | pickout_offset | list | pickout_index枚目の写真の中心座標をずらすオフセット
     """
     #===================================
     # Canvasを用意
@@ -18,7 +23,7 @@ def list_photos(images_list,
 
     #===================================
     # 写真の配置の開始位置を終わり位置を指定
-    start_coordinate = np.array([canvas_h - margin_size, margin_size])   # 左下
+    start_coordinate = np.array([canvas_h - margin_size, margin_size])  # 左下
     end_coordinate   = np.array([margin_size, canvas_w - margin_size])  # 右上
     print(start_coordinate)
     print(end_coordinate)
@@ -35,19 +40,20 @@ def list_photos(images_list,
     # 中心座標が配置される間隔
     images_center_interval_w = int((end_coordinate[1] - start_coordinate[1] - image_w) / (images_num - 1))
     images_center_interval_h = int((start_coordinate[0] - end_coordinate[0] - image_h) / (images_num - 1))
-    print("各写真同士の中心座標間隔\n" +
-          "| width  | {}".format(images_center_interval_w) + "\n" +
-          "| height | {}".format(images_center_interval_h))
 
+    #===================================
     center_coordinates = []
     center1 = start_coordinate + np.array([-1, 1]) * np.array([image_h, image_w], dtype=np.int) // 2 + (1-1) * np.array([-1, 1]) * np.array([images_center_interval_h, images_center_interval_w], dtype=np.int)
-    print("{:>3}枚目の写真の中心座標 : {}".format(1, center1))
     center_coordinates.append(center1)
     for i in range( 1,images_num):
         center = center1 + i * np.array([-1, 1]) * np.array([images_center_interval_h, images_center_interval_w], dtype=np.int)
-        print("{:>3}枚目の写真の中心座標 : {}".format(i+1, center))
         center_coordinates.append(center)
 
+    #===================================
+    # pickout_index枚目の写真を強調
+    center_coordinates[pickout_index] += np.array(pickout_offset, dtype=np.int)
+
+    #===================================
     # image_w, image_h に収まるようにリサイズする
     def resize_image(image, frame_width, frame_height):
         """
@@ -64,20 +70,21 @@ def list_photos(images_list,
 
     resized_images_list = [resize_image(image=image, frame_width=image_w, frame_height=image_h) for image in images_list]
 
+    #===================================
     for (y,x), re_im in zip(center_coordinates[::-1], resized_images_list[::-1]):
         y_width, x_width, _ = re_im.shape
         canvas[y-int(y_width/2):y+int(y_width/2), x-int(x_width/2):x+int(x_width/2), :] = re_im
         print(re_im)
 
-    print(canvas)
     return canvas
 
 
-
 if __name__ == "__main__":
-    import os, sys, pathlib
-    import re, pprint
-    import matplotlib
+    import os
+    import sys
+    import pathlib
+    import re
+    import pprint
     import matplotlib.pyplot as plt
 
     #===================================
@@ -94,6 +101,7 @@ if __name__ == "__main__":
     print("img_Path  | {:5} | {}".format(img_Path.exists(),  str(img_Path)))
 
     #===================================
+    # filename list
     all_files = [
         os.path.join(os.path.abspath(_dirpath), _filename)
         for _dirpath, _dirnames, _filenames in os.walk(str(img_Path))
@@ -103,11 +111,12 @@ if __name__ == "__main__":
 
     pprint.pprint(all_files)
 
+    #===================================
+    # read images
     images_list = []
     for file_path in all_files:
         im = cv2.imread(file_path)
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        print("| file name | {:>15} || shape | {} |".format(os.path.basename(file_path), im.shape))
+        print("| file name | {:>15} || shape | {} || dtype | {} |".format(os.path.basename(file_path), im.shape, im.dtype))
         images_list.append(im)
 
     #===================================
@@ -116,12 +125,19 @@ if __name__ == "__main__":
                          canvas_h=800,
                          margin_size=50,
                          canvas_image_ratio=3)
+    im = canvas.astype(dtype=np.int8)
+    print("im.min() : {}".format(im.min()))
+    print("type(im) : {}".format(type(im)))
+    print("im.shape : {}".format(im.shape))
 
     #===================================
-    # Plot
-    im = canvas
-
-    fig = plt.figure(figsize=(5,5))
+    # Matplotlib
+    print("matplot")
+    print("canvas.dtype : {}".format(canvas.dtype))
+    im = cv2.cvtColor(canvas.astype(dtype=np.uint8),
+                      cv2.COLOR_BGR2RGB)
+    print("im.min() : {}".format(im.min()))
+    fig = plt.figure()
     nrows, ncols, idx = 1, 1, 0
     idx += 1
     ax = fig.add_subplot(nrows, ncols, idx)
@@ -131,5 +147,14 @@ if __name__ == "__main__":
     ax.set_title(label="im.shape:{}".format(im.shape))
     ax.set_xlabel(xlabel="im[1]")
     ax.set_ylabel(ylabel="im[0]")
-    plt.imsave("./out.png", im)
+    plt.imsave("./matplot_out.png", im)
+
+    #===================================
+    # cv2.imshow
+    # https://docs.opencv.org/3.0-beta/modules/highgui/doc/user_interface.html?highlight=cv2.imshow#cv2.imshow
+    im = canvas.astype(dtype=np.uint8)
+    cv2.namedWindow("Photo List")
+    cv2.imshow("Photo List", im)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
