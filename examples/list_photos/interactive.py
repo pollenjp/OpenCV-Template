@@ -7,7 +7,8 @@ def main(img_path,
          canvas_h=800,
          margin_size=[50, 50],
          canvas_image_ratio=3,
-         pickout_offset=[-30,-30]):
+         pickout_offset=[-30,-30],
+         image_list_step=2):
     """
     | img_path | str | image directory path
     """
@@ -26,19 +27,23 @@ def main(img_path,
 
     #===================================
     # filename list
-    all_files = [
+    image_path_list = [
         os.path.join(os.path.abspath(_dirpath), _filename)
         for _dirpath, _dirnames, _filenames in os.walk(str(img_path))
         for _filename in _filenames
         if re.search(r'.*\.(png|bmp|jpg|tif)', _filename) is not None
     ]
 
-    pprint.pprint(all_files)
+    #===================================
+    # 間引き調整
+    images_list = image_path_list[::image_list_step]
+
+    pprint.pprint(image_path_list)
 
     #===================================
     # read images
     images_list = []
-    for file_path in all_files:
+    for file_path in image_path_list:
         im = cv2.imread(file_path)
         print("| file name | {:>15} || shape | {} || dtype | {} |".format(os.path.basename(file_path), im.shape, im.dtype))
         images_list.append(im)
@@ -87,7 +92,6 @@ def main(img_path,
                                      pickout_offset=pickout_offset)
         im = im.astype(dtype=np.uint8)
         cv2.imshow("Photo List", im)
-        cv2.moveWindow('Photo List', 20, 20)
 
     cv2.destroyAllWindows()
     return
@@ -99,7 +103,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     ################################################################################################################################################################################################################################################
     #parser.add_argument('path_data_csv',      action='store', nargs=None, const=None, default=None, type=str, choices=None, required=True,  help='Directory path where your taken photo files are located.')
-    parser.add_argument('--img_path',          action='store', nargs=None, const=None, default=None, type=str, choices=None, required=True,  help='image directory path')
+    parser.add_argument('--img_dir_path',      action='store', nargs=None, const=None, default=None, type=str, choices=None, required=True,  help='image directory path')
     parser.add_argument('--margin_size_x',     action='store', nargs='?',  const=5,    default=5,    type=int, choices=None, required=False, help='')
     parser.add_argument('--margin_size_y',     action='store', nargs='?',  const=10,   default=10,   type=int, choices=None, required=False, help='')
     parser.add_argument('--canvas_image_ratio',action='store', nargs='?',  const=4,    default=4,    type=int, choices=None, required=False, help='')
@@ -107,9 +111,9 @@ if __name__ == "__main__":
     parser.add_argument('--pickout_offset_y',  action='store', nargs='?',  const=-25,  default=-25,  type=int, choices=None, required=False, help='')
     args = parser.parse_args()
 
-    assert os.path.exists(args.img_path)
+    assert os.path.exists(args.img_dir_path)
 
-    main(img_path=args.img_path,
+    main(img_path=args.img_dir_path,
          canvas_w=600,
          canvas_h=400,
          margin_size=[args.margin_size_x, args.margin_size_x],
