@@ -118,8 +118,8 @@ if __name__ == "__main__":
         os.path.join(os.path.abspath(_dirpath), _filename)
         for _dirpath, _dirnames, _filenames in os.walk(str(img_Path))
         for _filename in _filenames
-        if re.search(r'.*\.(png|bmp|jpg)', _filename) is not None
-    ]
+        if re.search(r'^(?!.*^\.).*\.(png|bmp|jpg|tif)', _filename) is not None
+    ]  # .(ピリオド)で始まるファイルを無視
 
     pprint.pprint(all_files)
 
